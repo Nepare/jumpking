@@ -51,6 +51,7 @@ class Player(pygame.sprite.Sprite):
     jumping: bool = False
     orient_left: bool = False
     horizontal_velocity: int = 0
+    downwards_velocity: float = 0.0
 
     def __init__(self):
         super().__init__()
@@ -79,6 +80,7 @@ class Player(pygame.sprite.Sprite):
                 J1.jump_progress = J1.update(J1.jump_progress)
                 if self.jump_progress >= 1:
                     self.jump()
+                    J1.jump_progress = J1.update(0)
             else:
                 if self.jump_progress > 0.0:
                     self.jump()
@@ -96,7 +98,7 @@ class Player(pygame.sprite.Sprite):
 
         if self.jumping:
             if self.jump_progress > 0.0:
-                self.rect.move_ip(0, -12 * math.sqrt(self.jump_progress))
+                self.rect.move_ip(0, -12 * (self.jump_progress))
                 self.jump_progress -= 0.03
 
                 if self.horizontal_velocity == 1:
@@ -118,7 +120,8 @@ class Player(pygame.sprite.Sprite):
                 self.fall()
 
         if self.falling:
-            self.rect.move_ip(0, 5)
+            self.rect.move_ip(0, 5 + self.downwards_velocity)
+            self.downwards_velocity += 0.2
 
             if self.horizontal_velocity == 1:
                 self.rect.move_ip(4, 0)
@@ -137,6 +140,7 @@ class Player(pygame.sprite.Sprite):
                 self.falling = False
                 self.rect.center = (self.rect.center[0] , DISPLAY_HEIGHT - (self.image.get_height() / 2))
                 self.image = pygame.image.load("textures\\king_idle.png")
+                self.downwards_velocity = 0.0
                 if self.orient_left:
                     self.image = pygame.transform.flip(self.image, True, False)
                 self.image = pygame.transform.smoothscale(self.image, (50, 50))
@@ -145,6 +149,7 @@ class Player(pygame.sprite.Sprite):
         surface.blit(self.image, self.rect)
 
     def jump(self):
+        J1.update(0.0)
         texture_jump = pygame.image.load("textures\\king_jump.png")
         texture_jump = pygame.transform.smoothscale(texture_jump, (50, 50))
         if self.orient_left:
@@ -153,6 +158,7 @@ class Player(pygame.sprite.Sprite):
         self.jumping = True
 
     def fall(self):
+        self.downwards_velocity = 0.0
         texture_fall = pygame.image.load("textures\\king_fall.png")
         if not self.orient_left:
             texture_fall = pygame.transform.flip(texture_fall, True, False)
