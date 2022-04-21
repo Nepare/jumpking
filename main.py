@@ -68,8 +68,10 @@ class Player(pygame.sprite.Sprite):
 
                 if pressed_keys[K_RIGHT]:
                     self.horizontal_velocity = 1
+                    self.turn_right()
                 elif pressed_keys[K_LEFT]:
                     self.horizontal_velocity = -1
+                    self.turn_left()
                 else:
                     self.horizontal_velocity = 0
 
