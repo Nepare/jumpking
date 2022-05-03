@@ -246,6 +246,8 @@ class Player(pygame.sprite.Sprite):
         return False
 
     def if_collides_left(self, current_level):
+        if not self.orient_left:
+            return False
         for object in current_level.objectList:
             if self.rect.left >= object.bottom_left[0] and self.rect.left <= object.top_right[0]:
                 if DISPLAY_HEIGHT - object.bottom_left[1] < self.rect.bottom and DISPLAY_HEIGHT - object.bottom_left[1] > self.rect.top:
@@ -257,6 +259,8 @@ class Player(pygame.sprite.Sprite):
         return False
 
     def if_collides_right(self, current_level):
+        if self.orient_left:
+            return False
         for object in current_level.objectList:
             if self.rect.right >= object.bottom_left[0] and self.rect.right <= object.top_right[0]:
                 if DISPLAY_HEIGHT - object.bottom_left[1] < self.rect.bottom and DISPLAY_HEIGHT - object.bottom_left[1] > self.rect.top:
