@@ -25,9 +25,19 @@ pygame.display.set_caption("Jump King на минималках")
 
 class Map:
     objectList: list = []
+    slidersList: list = []
 
     def add_object(self, obj):
-        self.objectList.append(obj)
+        if isinstance(obj,CollisionObject):
+            self.objectList.append(obj)
+        if isinstance(obj,SlidingObject):
+            self.slidersList.append(obj)
+
+    def draw(self, surface):
+        for x in self.objectList:
+            x.draw(surface)
+        for x in self.slidersList:
+            x.draw(surface)
 
 class CollisionObject(pygame.sprite.Sprite):
     x_border: list = []
@@ -44,7 +54,27 @@ class CollisionObject(pygame.sprite.Sprite):
 
 
     def draw(self, surface):
-        pygame.draw.rect(surface, BLACK, (self.bottom_left[0], DISPLAY_HEIGHT - self.top_right[1], self.obj_width, self.obj_height), 100)
+        pygame.draw.rect(surface, BLACK, (self.bottom_left[0], DISPLAY_HEIGHT - self.top_right[1], self.obj_width, self.obj_height), 0 )
+
+class SlidingObject(pygame.sprite.Sprite):
+    tilt_left: bool
+    bottom_point: list = []
+    top_point: list = []
+
+    def __init__(self, bottom_x, bottom_y, top_x, top_y):  # так как все объекты скольжения это треугольники с углом 45,
+                                                           # то мы можем нарисовать их по двум точкам
+        super().__init__()
+        self.top_point = [top_x, top_y]
+        self.bottom_point = [bottom_x, bottom_y]
+        if top_x > bottom_x:                               # если вершина склона справа, то склон идёт влево
+            tilt_left = True
+        else:
+            tilt_left = False
+
+    def draw(self, surface):
+        pygame.draw.polygon(surface, BLACK, [(self.bottom_point[0], DISPLAY_HEIGHT - self.bottom_point[1]),
+                                (self.top_point[0], DISPLAY_HEIGHT - self.top_point[1]), (self.top_point[0], DISPLAY_HEIGHT - self.bottom_point[1])], 0)
+
 
 class JumpBar(pygame.sprite.Sprite):
     jump_progress: float = 0.0
@@ -61,9 +91,9 @@ class JumpBar(pygame.sprite.Sprite):
                 j_progress = 0
         return j_progress
 
-    def draw(self, surface, j_progress):
+    def draw(self, surface):
         border = pygame.draw.rect(DISPLAYSURF, BLACK, (5, 5, 40, 140), 2)
-        scale = pygame.draw.rect(surface, GREEN, (7, 143 - (j_progress * 138), 36, 138 * j_progress), 20)
+        scale = pygame.draw.rect(surface, GREEN, (7, 143 - (self.jump_progress * 138), 36, 138 * self.jump_progress), 20)
 
 
 class Player(pygame.sprite.Sprite):
@@ -240,7 +270,7 @@ class Player(pygame.sprite.Sprite):
 
     def if_collides_up(self, current_level):
         for object in current_level.objectList:
-            if self.rect.top <= DISPLAY_HEIGHT - object.bottom_left[1] and self.rect.top >= DISPLAY_HEIGHT - object.top_right[1]:
+            if self.rect.top <= DISPLAY_HEIGHT - object.bottom_left[1] and self.rect.top >= (DISPLAY_HEIGHT - object.bottom_left[1] - 5 - self.downwards_velocity):
                 if self.rect.left <= object.top_right[0] and self.rect.right >= object.bottom_left[0]:
                     return object
         return False
@@ -372,11 +402,10 @@ def gameloop(timer):
     # END OF GAME LOGIC
 
     DISPLAYSURF.fill(WHITE)
-    P1.draw(DISPLAYSURF)
-    J1.draw(DISPLAYSURF, J1.jump_progress)
 
-    for x in current_level.objectList:
-        x.draw(DISPLAYSURF)
+    P1.draw(DISPLAYSURF)
+    J1.draw(DISPLAYSURF)
+    current_level.draw(DISPLAYSURF)
 
     pygame.display.update()
     return timer
@@ -390,19 +419,16 @@ timer: int = 0
 
 # высота прыжка - примерно 200 пикселей
 
-Level1.add_object(CollisionObject(0,0,DISPLAY_WIDTH,1))
+Level1.add_object(CollisionObject(0,0,DISPLAY_WIDTH,1)) # это пол, по котором ходит персонаж
 Level1.add_object(CollisionObject(250,140,450,180))
 Level1.add_object(CollisionObject(0,0,20,20))
 Level1.add_object(CollisionObject(100,300,200,340))
 Level1.add_object(CollisionObject(180,340,200,360))
 Level1.add_object(CollisionObject(240,460,350,500))
-
-Level1.add_object(CollisionObject(280,450,330,600))
-
+Level1.add_object(CollisionObject(280,460,330,600))
 Level1.add_object(CollisionObject(520,340,600,380))
 Level1.add_object(CollisionObject(100,600,200,640))
-
-C_example = CollisionObject(0,0,1,1)
+# Level1.add_object(SlidingObject(20,0,40,20))
 
 while True:
     for event in pygame.event.get():
