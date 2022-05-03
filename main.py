@@ -197,6 +197,16 @@ class Player(pygame.sprite.Sprite):
                 self.turn_right()
                 self.texture_fall()
 
+            bounce_left_surface = self.if_collides_left(self.current_level)
+            if bounce_left_surface:
+                self.turn_right()
+                self.texture_bounce()
+
+            bounce_right_surface = self.if_collides_right(self.current_level)
+            if bounce_right_surface:
+                self.turn_left()
+                self.texture_bounce()
+
             if self.rect.center[1] + (self.image.get_height() / 2) >= DISPLAY_HEIGHT:
                 self.land()
                 self.rect.center = (self.rect.center[0], DISPLAY_HEIGHT - (self.image.get_height() / 2))
@@ -216,8 +226,12 @@ class Player(pygame.sprite.Sprite):
 
     def if_collides_down(self, current_level):
         for object in current_level.objectList:
-            if self.rect.bottom >= DISPLAY_HEIGHT - object.top_right[1] and self.rect.bottom <= DISPLAY_HEIGHT - object.bottom_left[1]:
-                if self.rect.left <= object.top_right[0] and self.rect.right >= object.bottom_left[0]:
+            if self.rect.bottom >= DISPLAY_HEIGHT - object.top_right[1] and self.rect.bottom <= DISPLAY_HEIGHT - \
+                    (object.top_right[1] - 5 - self.downwards_velocity): # Если низ персонажа находится НИЖЕ чем
+                                                                         # верхняя грань объекта, но выше чем
+                                                                         # нижняя грань куда он может провалиться
+                                                                         # (т.е. если он застрял в текстурах)
+                if self.rect.left + 9 <= object.top_right[0] and self.rect.right - 9 >= object.bottom_left[0]:
                     return object
         return False
 
