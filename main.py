@@ -119,7 +119,7 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         pressed_keys = pygame.key.get_pressed()
         if not self.jumping and not self.falling:
-            # ----------------------------------------------- JUMPING
+            # ----------------------------------------------- CHARGING A JUMP
             if pressed_keys[K_SPACE]:
                 texture_charging = pygame.image.load("textures\\king_charge.png")
                 texture_charging = pygame.transform.scale(texture_charging,(50,50))
@@ -270,7 +270,7 @@ class Player(pygame.sprite.Sprite):
 
     def if_collides_up(self, current_level):
         for object in current_level.objectList:
-            if self.rect.top <= DISPLAY_HEIGHT - object.bottom_left[1] and self.rect.top >= (DISPLAY_HEIGHT - object.bottom_left[1] - 5 - self.downwards_velocity):
+            if self.rect.top <= DISPLAY_HEIGHT - object.bottom_left[1] and self.rect.top >= (DISPLAY_HEIGHT - object.bottom_left[1] - 14):
                 if self.rect.left <= object.top_right[0] and self.rect.right >= object.bottom_left[0]:
                     return object
         return False
@@ -279,7 +279,8 @@ class Player(pygame.sprite.Sprite):
         if not self.orient_left:
             return False
         for object in current_level.objectList:
-            if self.rect.left >= object.bottom_left[0] and self.rect.left <= object.top_right[0]:
+            if self.rect.left >= object.top_right[0] - 6 and self.rect.left <= object.top_right[0]:
+                                                                    # 6 пикселей - это максимальная глубина застревания
                 if DISPLAY_HEIGHT - object.bottom_left[1] < self.rect.bottom and DISPLAY_HEIGHT - object.bottom_left[1] > self.rect.top:
                     return object
                 if DISPLAY_HEIGHT - object.top_right[1] < self.rect.bottom and DISPLAY_HEIGHT - object.top_right[1] > self.rect.top:
@@ -292,7 +293,8 @@ class Player(pygame.sprite.Sprite):
         if self.orient_left:
             return False
         for object in current_level.objectList:
-            if self.rect.right >= object.bottom_left[0] and self.rect.right <= object.top_right[0]:
+            if self.rect.right >= object.bottom_left[0] and self.rect.right <= object.bottom_left[0] + 6:
+                                                                    # 6 пикселей - это максимальная глубина застревания
                 if DISPLAY_HEIGHT - object.bottom_left[1] < self.rect.bottom and DISPLAY_HEIGHT - object.bottom_left[1] > self.rect.top:
                     return object
                 if DISPLAY_HEIGHT - object.top_right[1] < self.rect.bottom and DISPLAY_HEIGHT - object.top_right[1] > self.rect.top:
