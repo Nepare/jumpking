@@ -11,6 +11,7 @@ FPS = pygame.time.Clock()
 FPS.tick(60)
 
 BLUE = (0, 0, 255)
+GRAY = (100, 100, 100)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 WHITE = (255, 255, 255)
@@ -25,18 +26,18 @@ pygame.display.set_caption("Jump King на минималках")
 
 class Map:
     objectList: list = []
-    slidersList: list = []
+    tiltList: list = []
 
     def add_object(self, obj):
         if isinstance(obj,CollisionObject):
             self.objectList.append(obj)
-        if isinstance(obj,SlidingObject):
-            self.slidersList.append(obj)
+        if isinstance(obj,TiltObject):
+            self.tiltList.append(obj)
 
     def draw(self, surface):
         for x in self.objectList:
             x.draw(surface)
-        for x in self.slidersList:
+        for x in self.tiltList:
             x.draw(surface)
 
 class CollisionObject(pygame.sprite.Sprite):
@@ -56,20 +57,26 @@ class CollisionObject(pygame.sprite.Sprite):
     def draw(self, surface):
         pygame.draw.rect(surface, BLACK, (self.bottom_left[0], DISPLAY_HEIGHT - self.top_right[1], self.obj_width, self.obj_height), 0 )
 
-class SlidingObject(pygame.sprite.Sprite):
+class TiltObject(pygame.sprite.Sprite):
     tilt_left: bool
     bottom_point: list = []
     top_point: list = []
+    right_x: int
+    left_x: int
 
     def __init__(self, bottom_x, bottom_y, top_x, top_y):  # так как все объекты скольжения это треугольники с углом 45,
                                                            # то мы можем нарисовать их по двум точкам
         super().__init__()
         self.top_point = [top_x, top_y]
         self.bottom_point = [bottom_x, bottom_y]
-        if top_x > bottom_x:                               # если вершина склона справа, то склон идёт влево
-            tilt_left = True
+        if top_x > bottom_x:                               # если вершина склона справа, то склон идёт влево (и вниз)
+            self.tilt_left = True
+            self.right_x = top_x
+            self.left_x = bottom_x
         else:
-            tilt_left = False
+            self.tilt_left = False
+            self.right_x = bottom_x
+            self.left_x = top_x
 
     def draw(self, surface):
         pygame.draw.polygon(surface, BLACK, [(self.bottom_point[0], DISPLAY_HEIGHT - self.bottom_point[1]),
@@ -93,6 +100,7 @@ class JumpBar(pygame.sprite.Sprite):
 
     def draw(self, surface):
         border = pygame.draw.rect(DISPLAYSURF, BLACK, (5, 5, 40, 140), 2)
+        border = pygame.draw.rect(DISPLAYSURF, GRAY, (7, 7, 36, 136), 0)
         scale = pygame.draw.rect(surface, GREEN, (7, 143 - (self.jump_progress * 138), 36, 138 * self.jump_progress), 20)
 
 
@@ -138,18 +146,18 @@ class Player(pygame.sprite.Sprite):
                 J1.jump_progress = J1.update(J1.jump_progress)
                 if self.jump_progress >= 1:
                     self.jump()
-                    J1.jump_progress = J1.update(0)
+                    J1.jump_progress = J1.update(-0.02) # в следующий такт шкала увеличится на 0.02, поэтому так
             else:
                 if self.jump_progress > 0.0:
                     self.jump()
-                    J1.jump_progress = J1.update(0)
+                    J1.jump_progress = J1.update(-0.02)
                 else:
                     # ----------------------------------------------- WALKING LEFT
                     if pressed_keys[K_LEFT]:
                         self.idle_animation_progress = 0
                         self.turn_left()
-                        if not self.rect.center[0] - (self.rect.width / 2) <= 0:
-                            if not self.if_collides_left(self.current_level):
+                        if not self.if_collides_left(self.current_level):
+                            if not self.if_collides_with_a_slider_side(self.current_level):
                                 self.rect.move_ip(-2,0)
                         self.walk_animation_progress += 1
                         if self.walk_animation_progress >= 40:
@@ -162,8 +170,8 @@ class Player(pygame.sprite.Sprite):
                     elif pressed_keys[K_RIGHT]:
                         self.idle_animation_progress = 0
                         self.turn_right()
-                        if not self.rect.center[0] + (self.rect.width / 2) >= DISPLAY_WIDTH:
-                            if not self.if_collides_right(self.current_level):
+                        if not self.if_collides_right(self.current_level):
+                            if not self.if_collides_with_a_slider_side(self.current_level):
                                 self.rect.move_ip(2,0)
                         self.walk_animation_progress += 1
                         if self.walk_animation_progress >= 40:
@@ -186,31 +194,18 @@ class Player(pygame.sprite.Sprite):
                 self.rect.move_ip(4 * self.horizontal_velocity, -14 * (self.jump_progress))
                 self.jump_progress -= 0.03
 
-                if self.rect.center[0] + (self.rect.width / 2) >= DISPLAY_WIDTH: # столкновение с правым краем экрана
-                    self.turn_left()
-                    self.texture_bounce()
-
-                if self.rect.center[0] - (self.rect.width / 2) <= 0: # столкновение с левым краем экрана
-                    self.turn_right()
-                    self.texture_bounce()
-
             if self.jump_progress <= 0:
                 self.falling = True
                 self.jumping = False
                 self.fall()
 
-            bumping_surface = self.if_collides_up(self.current_level)
-            if bumping_surface:
+            if self.if_collides_up(self.current_level):
                 self.fall()
                 self.jump_progress = 0
-
-            bounce_left_surface = self.if_collides_left(self.current_level)
-            if bounce_left_surface:
+            elif self.if_collides_left(self.current_level) and self.horizontal_velocity != 0:
                 self.turn_right()
                 self.texture_bounce()
-
-            bounce_right_surface = self.if_collides_right(self.current_level)
-            if bounce_right_surface:
+            elif self.if_collides_right(self.current_level) and self.horizontal_velocity != 0:
                 self.turn_left()
                 self.texture_bounce()
 
@@ -219,32 +214,20 @@ class Player(pygame.sprite.Sprite):
             self.rect.move_ip(4 * self.horizontal_velocity, 5 + self.downwards_velocity)
             self.downwards_velocity += 0.2
 
-            if self.rect.center[0] + (self.rect.width / 2) >= DISPLAY_WIDTH:  # столкновение с правым краем экрана
-                self.turn_left()
-                self.texture_fall()
-
-            if self.rect.center[0] - (self.rect.width / 2) <= 0:  # столкновение с левым краем экрана
-                self.turn_right()
-                self.texture_fall()
-
-            bounce_left_surface = self.if_collides_left(self.current_level)
-            if bounce_left_surface:
+            if self.if_collides_left(self.current_level) and self.horizontal_velocity != 0:
                 self.turn_right()
                 self.texture_bounce()
-
-            bounce_right_surface = self.if_collides_right(self.current_level)
-            if bounce_right_surface:
+            elif self.if_collides_right(self.current_level) and self.horizontal_velocity != 0:
                 self.turn_left()
                 self.texture_bounce()
-
-            if self.rect.center[1] + (self.image.get_height() / 2) >= DISPLAY_HEIGHT:
-                self.land()
-                self.rect.center = (self.rect.center[0], DISPLAY_HEIGHT - (self.image.get_height() / 2))
 
             standing_surface = self.if_collides_down(self.current_level)
             if standing_surface:
                 self.land()
                 self.move_to_top_surface(self.current_level, standing_surface)
+
+            if self.if_collides_with_a_slider_tilt(self.current_level):
+                print(timer)
 
     def land(self):
         self.falling = False
@@ -272,6 +255,10 @@ class Player(pygame.sprite.Sprite):
         for object in current_level.objectList:
             if self.rect.top <= DISPLAY_HEIGHT - object.bottom_left[1] and self.rect.top >= (DISPLAY_HEIGHT - object.bottom_left[1] - 14):
                 if self.rect.left <= object.top_right[0] and self.rect.right >= object.bottom_left[0]:
+                    return object
+        for object in current_level.tiltList:
+            if self.rect.top <= DISPLAY_HEIGHT - object.bottom_point[1] and self.rect.top >= (DISPLAY_HEIGHT - object.bottom_point[1] - 14):
+                if self.rect.left <= object.right_x and self.rect.right >= object.left_x:
                     return object
         return False
 
@@ -302,6 +289,50 @@ class Player(pygame.sprite.Sprite):
                 if DISPLAY_HEIGHT - object.top_right[1] <= self.rect.top and DISPLAY_HEIGHT - object.bottom_left[1] >= self.rect.bottom:
                     return object
         return False
+
+    def if_collides_with_a_slider_side(self, current_level):
+        if self.orient_left:
+            for object in current_level.tiltList:
+                if self.rect.left <= object.right_x and self.rect.left >= object.right_x - 6:
+                    if self.rect.top > DISPLAY_HEIGHT - object.top_point[1] and self.rect.top < DISPLAY_HEIGHT - object.bottom_point[1]:
+                        return True
+                    if self.rect.bottom > DISPLAY_HEIGHT - object.top_point[1] and self.rect.bottom < DISPLAY_HEIGHT - object.bottom_point[1]:
+                        return True
+                    if self.rect.top < DISPLAY_HEIGHT - object.top_point[1] and self.rect.bottom > DISPLAY_HEIGHT - object.top_point[1]:
+                        return True
+        else:
+            for object in current_level.tiltList:
+                if self.rect.right >= object.left_x and self.rect.right <= object.left_x + 6:
+                    if self.rect.top > DISPLAY_HEIGHT - object.top_point[1] and self.rect.top < DISPLAY_HEIGHT - \
+                            object.bottom_point[1]:
+                        return True
+                    if self.rect.bottom > DISPLAY_HEIGHT - object.top_point[1] and self.rect.bottom < DISPLAY_HEIGHT - \
+                            object.bottom_point[1]:
+                        return True
+                    if self.rect.top < DISPLAY_HEIGHT - object.top_point[1] and self.rect.bottom > DISPLAY_HEIGHT - \
+                            object.top_point[1]:
+                        return True
+        return False
+
+    def if_collides_with_a_slider_tilt(self, current_level):
+        touching_point: list = []
+
+        for object in current_level.tiltList:
+            relative_x: int
+            if object.tilt_left:
+                touching_point = self.rect.bottomright
+                relative_x = touching_point[0] - object.left_x
+            else:
+                touching_point = self.rect.bottomleft
+                relative_x = object.right_x - touching_point[0]
+
+            if touching_point[0] >= object.left_x - 1 and touching_point[0] <= object.right_x + 1: # если игрок над/под склоном
+                if touching_point[1] > DISPLAY_HEIGHT - (object.bottom_point[1] + relative_x) and touching_point[1] < \
+                        DISPLAY_HEIGHT - (object.bottom_point[1] + relative_x - 20):
+                    return True
+
+        return False
+
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -422,6 +453,9 @@ timer: int = 0
 # высота прыжка - примерно 200 пикселей
 
 Level1.add_object(CollisionObject(0,0,DISPLAY_WIDTH,1)) # это пол, по котором ходит персонаж
+Level1.add_object(CollisionObject(0,0,1,DISPLAY_HEIGHT))
+Level1.add_object(CollisionObject(DISPLAY_WIDTH-1,0,DISPLAY_WIDTH,DISPLAY_HEIGHT))
+
 Level1.add_object(CollisionObject(250,140,450,180))
 Level1.add_object(CollisionObject(0,0,20,20))
 Level1.add_object(CollisionObject(100,300,200,340))
@@ -430,7 +464,9 @@ Level1.add_object(CollisionObject(240,460,350,500))
 Level1.add_object(CollisionObject(280,460,330,600))
 Level1.add_object(CollisionObject(520,340,600,380))
 Level1.add_object(CollisionObject(100,600,200,640))
-# Level1.add_object(SlidingObject(20,0,40,20))
+Level1.add_object(CollisionObject(DISPLAY_WIDTH-100,0,DISPLAY_WIDTH,50))
+
+Level1.add_object(TiltObject(DISPLAY_WIDTH-50 - 100,0,DISPLAY_WIDTH - 100,50))
 
 while True:
     for event in pygame.event.get():
