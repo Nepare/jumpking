@@ -209,6 +209,18 @@ class Player(pygame.sprite.Sprite):
                 self.turn_left()
                 self.texture_bounce()
 
+            current_slider = self.if_collides_with_a_slider_tilt(self.current_level)
+            if current_slider:
+                relative_x: int
+                if current_slider.tilt_left:
+                    touching_point = self.rect.bottomright
+                    relative_x = touching_point[0] - current_slider.left_x
+                else:
+                    touching_point = self.rect.bottomleft
+                    relative_x = current_slider.right_x - touching_point[0]
+                self.rect.move_ip(0,(-1) * (relative_x - (DISPLAY_HEIGHT - current_slider.bottom_point[1] - self.rect.bottom)))
+                # ^ если мы прыгаем вверх по горке, мы именно что скользим по прямой горке, а не дуге в горку
+
         # ------------------------------------------------------ WHILE FALLING
         if self.falling:
             self.rect.move_ip(4 * self.horizontal_velocity, 5 + self.downwards_velocity)
@@ -226,8 +238,21 @@ class Player(pygame.sprite.Sprite):
                 self.land()
                 self.move_to_top_surface(self.current_level, standing_surface)
 
-            if self.if_collides_with_a_slider_tilt(self.current_level):
-                print(timer)
+            current_slider = self.if_collides_with_a_slider_tilt(self.current_level)
+            if current_slider:
+                if current_slider.tilt_left:
+                    self.turn_left()
+                else:
+                    self.turn_right()
+                self.texture_bounce()
+                relative_x: int
+                if current_slider.tilt_left:
+                    touching_point = self.rect.bottomright
+                    relative_x = touching_point[0] - current_slider.left_x
+                else:
+                    touching_point = self.rect.bottomleft
+                    relative_x = current_slider.right_x - touching_point[0]
+                self.rect.move_ip(0, (-1) * (relative_x - (DISPLAY_HEIGHT - current_slider.bottom_point[1] - self.rect.bottom)))
 
     def land(self):
         self.falling = False
@@ -328,8 +353,8 @@ class Player(pygame.sprite.Sprite):
 
             if touching_point[0] >= object.left_x - 1 and touching_point[0] <= object.right_x + 1: # если игрок над/под склоном
                 if touching_point[1] > DISPLAY_HEIGHT - (object.bottom_point[1] + relative_x) and touching_point[1] < \
-                        DISPLAY_HEIGHT - (object.bottom_point[1] + relative_x - 20):
-                    return True
+                        DISPLAY_HEIGHT - (object.bottom_point[1] + relative_x - 25):
+                    return object
 
         return False
 
