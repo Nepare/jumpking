@@ -11,10 +11,11 @@ FPS = pygame.time.Clock()
 FPS.tick(60)
 
 BLUE = (0, 0, 255)
-GRAY = (100, 100, 100)
+GRAY = (150, 150, 150)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 WHITE = (255, 255, 255)
+DARK_GRAY = (200,200,200)
 BLACK = (0, 0, 0)
 
 DISPLAY_WIDTH = 600
@@ -27,6 +28,12 @@ pygame.display.set_caption("Jump King на минималках")
 class Map:
     objectList: list = []
     tiltList: list = []
+    name: str
+
+    def __init__(self, name_in):
+        self.name = name_in
+        self.objectList = []
+        self.tiltList = []
 
     def add_object(self, obj):
         if isinstance(obj,CollisionObject):
@@ -82,6 +89,11 @@ class TiltObject(pygame.sprite.Sprite):
         pygame.draw.polygon(surface, BLACK, [(self.bottom_point[0], DISPLAY_HEIGHT - self.bottom_point[1]),
                                 (self.top_point[0], DISPLAY_HEIGHT - self.top_point[1]), (self.top_point[0], DISPLAY_HEIGHT - self.bottom_point[1])], 0)
 
+class MapController:
+    level_list: list = []
+
+    def add_in_order(self, level_in):
+        self.level_list.append(level_in)
 
 class JumpBar(pygame.sprite.Sprite):
     jump_progress: float = 0.0
@@ -102,7 +114,6 @@ class JumpBar(pygame.sprite.Sprite):
         border = pygame.draw.rect(DISPLAYSURF, BLACK, (5, 5, 40, 140), 2)
         border = pygame.draw.rect(DISPLAYSURF, GRAY, (7, 7, 36, 136), 0)
         scale = pygame.draw.rect(surface, GREEN, (7, 143 - (self.jump_progress * 138), 36, 138 * self.jump_progress), 20)
-
 
 class Player(pygame.sprite.Sprite):
     jump_progress: float = 0.0
@@ -221,6 +232,10 @@ class Player(pygame.sprite.Sprite):
                 self.rect.move_ip(0,(-1) * (relative_x - (DISPLAY_HEIGHT - current_slider.bottom_point[1] - self.rect.bottom)))
                 # ^ если мы прыгаем вверх по горке, мы именно что скользим по прямой горке, а не дуге в горку
 
+            if self.rect.bottom <= 0:
+                P1.update_level(Levels.level_list[Levels.level_list.index(self.current_level) + 1])
+                self.rect.bottom = DISPLAY_HEIGHT
+
         # ------------------------------------------------------ WHILE FALLING
         if self.falling:
             self.rect.move_ip(4 * self.horizontal_velocity, 5 + self.downwards_velocity)
@@ -252,7 +267,11 @@ class Player(pygame.sprite.Sprite):
                 else:
                     touching_point = self.rect.bottomleft
                     relative_x = current_slider.right_x - touching_point[0]
-                self.rect.move_ip(0, (-1) * (relative_x - (DISPLAY_HEIGHT - current_slider.bottom_point[1] - self.rect.bottom)))
+                self.rect.move_ip(self.horizontal_velocity, (-1) * (relative_x - (DISPLAY_HEIGHT - current_slider.bottom_point[1] - self.rect.bottom)))
+
+            if self.rect.bottom >= DISPLAY_HEIGHT:
+                P1.update_level(Levels.level_list[Levels.level_list.index(self.current_level) - 1])
+                self.rect.bottom = 0
 
     def land(self):
         self.falling = False
@@ -291,8 +310,8 @@ class Player(pygame.sprite.Sprite):
         if not self.orient_left:
             return False
         for object in current_level.objectList:
-            if self.rect.left >= object.top_right[0] - 6 and self.rect.left <= object.top_right[0]:
-                                                                    # 6 пикселей - это максимальная глубина застревания
+            if self.rect.left >= object.top_right[0] - 8 and self.rect.left <= object.top_right[0]:
+                                                                    # 8 пикселей - это максимальная глубина застревания
                 if DISPLAY_HEIGHT - object.bottom_left[1] < self.rect.bottom and DISPLAY_HEIGHT - object.bottom_left[1] > self.rect.top:
                     return object
                 if DISPLAY_HEIGHT - object.top_right[1] < self.rect.bottom and DISPLAY_HEIGHT - object.top_right[1] > self.rect.top:
@@ -305,8 +324,8 @@ class Player(pygame.sprite.Sprite):
         if self.orient_left:
             return False
         for object in current_level.objectList:
-            if self.rect.right >= object.bottom_left[0] and self.rect.right <= object.bottom_left[0] + 6:
-                                                                    # 6 пикселей - это максимальная глубина застревания
+            if self.rect.right >= object.bottom_left[0] and self.rect.right <= object.bottom_left[0] + 8:
+                                                                    # 8 пикселей - это максимальная глубина застревания
                 if DISPLAY_HEIGHT - object.bottom_left[1] < self.rect.bottom and DISPLAY_HEIGHT - object.bottom_left[1] > self.rect.top:
                     return object
                 if DISPLAY_HEIGHT - object.top_right[1] < self.rect.bottom and DISPLAY_HEIGHT - object.top_right[1] > self.rect.top:
@@ -450,7 +469,6 @@ class Player(pygame.sprite.Sprite):
 
 
 def gameloop(timer):
-    current_level = Level1
     timer += 1
 
     # START OF GAME LOGIC
@@ -462,37 +480,50 @@ def gameloop(timer):
     DISPLAYSURF.fill(WHITE)
 
     P1.draw(DISPLAYSURF)
+    P1.current_level.draw(DISPLAYSURF)
     J1.draw(DISPLAYSURF)
-    current_level.draw(DISPLAYSURF)
 
     pygame.display.update()
     return timer
 
 P1 = Player()
 J1 = JumpBar()
-Level1 = Map()
-P1.update_level(Level1)
 
 timer: int = 0
 
 # высота прыжка - примерно 200 пикселей
 
-Level1.add_object(CollisionObject(0,0,DISPLAY_WIDTH,1)) # это пол, по котором ходит персонаж
+Level1 = Map("Уровень 1")
+
+Level1.add_object(CollisionObject(0,0,DISPLAY_WIDTH,2)) # это пол, по котором ходит персонаж
 Level1.add_object(CollisionObject(0,0,1,DISPLAY_HEIGHT))
 Level1.add_object(CollisionObject(DISPLAY_WIDTH-1,0,DISPLAY_WIDTH,DISPLAY_HEIGHT))
+Level1.add_object(CollisionObject(0,DISPLAY_HEIGHT - 150,50,DISPLAY_HEIGHT))
 
 Level1.add_object(CollisionObject(250,140,450,180))
-Level1.add_object(CollisionObject(0,0,20,20))
 Level1.add_object(CollisionObject(100,300,200,340))
 Level1.add_object(CollisionObject(180,340,200,360))
 Level1.add_object(CollisionObject(240,460,350,500))
 Level1.add_object(CollisionObject(280,460,330,600))
-Level1.add_object(CollisionObject(520,340,600,380))
-Level1.add_object(CollisionObject(100,600,200,640))
-Level1.add_object(CollisionObject(DISPLAY_WIDTH-100,0,DISPLAY_WIDTH,50))
+Level1.add_object(CollisionObject(0,600,200,640))
 
+Level1.add_object(CollisionObject(DISPLAY_WIDTH-100,0,DISPLAY_WIDTH,50))
 Level1.add_object(TiltObject(DISPLAY_WIDTH-50 - 100,0,DISPLAY_WIDTH - 100,50))
 
+Level2 = Map("Уровень 2")
+
+Level2.add_object(CollisionObject(0,0,1,DISPLAY_HEIGHT))
+Level2.add_object(CollisionObject(DISPLAY_WIDTH-1,0,DISPLAY_WIDTH,DISPLAY_HEIGHT))
+Level2.add_object(CollisionObject(0,DISPLAY_HEIGHT - 150,50,DISPLAY_HEIGHT))
+
+Level2.add_object(CollisionObject(0,0,50,20))
+
+
+Levels = MapController()
+Levels.add_in_order(Level1)
+Levels.add_in_order(Level2)
+
+P1.update_level(Level1)
 while True:
     for event in pygame.event.get():
         if event.type == QUIT:
