@@ -1,6 +1,7 @@
 import sys
 import time
 import math
+import json
 
 import pygame
 from pygame.locals import *
@@ -46,6 +47,17 @@ class Map:
             x.draw(surface)
         for x in self.tiltList:
             x.draw(surface)
+
+    def import_from_json(self, json_file_name):
+        with open("levels\\" + json_file_name + ".json", 'r') as f:
+            level_dict = json.load(f)
+            collision_objects = level_dict["col"]
+            tilt_objects = level_dict["tilt"]
+            for x in collision_objects:
+                self.add_object(CollisionObject(*x))
+            if tilt_objects:
+                for x in tilt_objects:
+                    self.add_object(TiltObject(*x))
 
 class CollisionObject(pygame.sprite.Sprite):
     x_border: list = []
@@ -120,6 +132,7 @@ class Player(pygame.sprite.Sprite):
     falling: bool = False
     jumping: bool = False
     orient_left: bool = False
+    dead: bool = False
     horizontal_velocity: int = 0
     downwards_velocity: float = 0.0
     walk_animation_progress: int = 0
@@ -144,6 +157,7 @@ class Player(pygame.sprite.Sprite):
                 texture_charging = pygame.transform.scale(texture_charging,(50,50))
                 self.image = texture_charging
                 self.idle_animation_progress = 0
+                self.dead = False
 
                 if pressed_keys[K_RIGHT]:
                     self.turn_right()
@@ -166,6 +180,7 @@ class Player(pygame.sprite.Sprite):
                     # ----------------------------------------------- WALKING LEFT
                     if pressed_keys[K_LEFT]:
                         self.idle_animation_progress = 0
+                        self.dead = False
                         self.turn_left()
                         if not self.if_collides_left(self.current_level):
                             if not self.if_collides_with_a_slider_side(self.current_level):
@@ -180,6 +195,7 @@ class Player(pygame.sprite.Sprite):
                     # ----------------------------------------------- WALKING RIGHT
                     elif pressed_keys[K_RIGHT]:
                         self.idle_animation_progress = 0
+                        self.dead = False
                         self.turn_right()
                         if not self.if_collides_right(self.current_level):
                             if not self.if_collides_with_a_slider_side(self.current_level):
@@ -193,10 +209,11 @@ class Player(pygame.sprite.Sprite):
                             self.fall()
                     # ----------------------------------------------- NOTHING HAPPENS
                     else:
-                        self.idle_animation_progress += 1
-                        if self.idle_animation_progress >= 1000: # 1000 тиков для полного цикла анимации покоя
-                            self.idle_animation_progress = 0
-                        self.texture_idle_animation()
+                        if not self.dead:
+                            self.idle_animation_progress += 1
+                            if self.idle_animation_progress >= 1000: # 1000 тиков для полного цикла анимации покоя
+                                self.idle_animation_progress = 0
+                            self.texture_idle_animation()
 
 
         # ------------------------------------------------------------- WHILE JUMPING
@@ -275,7 +292,11 @@ class Player(pygame.sprite.Sprite):
 
     def land(self):
         self.falling = False
-        self.image = pygame.image.load("textures\\king_idle.png")
+        if self.downwards_velocity < 9:
+            self.image = pygame.image.load("textures\\king_idle.png")
+        else:
+            self.image = pygame.image.load("textures\\king_ded.png")
+            self.dead = True
         self.downwards_velocity = 0.0
         if self.orient_left:
             self.image = pygame.transform.flip(self.image, True, False)
@@ -494,29 +515,10 @@ timer: int = 0
 # высота прыжка - примерно 200 пикселей
 
 Level1 = Map("Уровень 1")
-
-Level1.add_object(CollisionObject(0,0,DISPLAY_WIDTH,2)) # это пол, по котором ходит персонаж
-Level1.add_object(CollisionObject(0,0,1,DISPLAY_HEIGHT))
-Level1.add_object(CollisionObject(DISPLAY_WIDTH-1,0,DISPLAY_WIDTH,DISPLAY_HEIGHT))
-Level1.add_object(CollisionObject(0,DISPLAY_HEIGHT - 150,50,DISPLAY_HEIGHT))
-
-Level1.add_object(CollisionObject(250,140,450,180))
-Level1.add_object(CollisionObject(100,300,200,340))
-Level1.add_object(CollisionObject(180,340,200,360))
-Level1.add_object(CollisionObject(240,460,350,500))
-Level1.add_object(CollisionObject(280,460,330,600))
-Level1.add_object(CollisionObject(0,600,200,640))
-
-Level1.add_object(CollisionObject(DISPLAY_WIDTH-100,0,DISPLAY_WIDTH,50))
-Level1.add_object(TiltObject(DISPLAY_WIDTH-50 - 100,0,DISPLAY_WIDTH - 100,50))
+Level1.import_from_json("1")
 
 Level2 = Map("Уровень 2")
-
-Level2.add_object(CollisionObject(0,0,1,DISPLAY_HEIGHT))
-Level2.add_object(CollisionObject(DISPLAY_WIDTH-1,0,DISPLAY_WIDTH,DISPLAY_HEIGHT))
-Level2.add_object(CollisionObject(0,DISPLAY_HEIGHT - 150,50,DISPLAY_HEIGHT))
-
-Level2.add_object(CollisionObject(0,0,50,20))
+Level2.import_from_json("2")
 
 
 Levels = MapController()
