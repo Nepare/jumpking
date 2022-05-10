@@ -63,11 +63,16 @@ Level3.import_from_json("3")
 Level4 = Map("Лаз")
 Level4.import_from_json("4")
 
+Level5 = Map("Крыша")
+Level5.import_from_json("5")
+
+
 Levels = MapController()
 Levels.add_in_order(Level1)
 Levels.add_in_order(Level2)
 Levels.add_in_order(Level3)
 Levels.add_in_order(Level4)
+Levels.add_in_order(Level5)
 
 P1.update_level(Level1)
 while True:
