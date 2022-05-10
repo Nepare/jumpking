@@ -1,7 +1,4 @@
 import sys
-import time
-import math
-import json
 
 import pygame
 from pygame.locals import *
@@ -9,6 +6,9 @@ from map import Map, MapController
 
 DISPLAY_WIDTH = 600
 DISPLAY_HEIGHT = 700
+
+pygame.mixer.init()
+
 
 class Player(pygame.sprite.Sprite):
     jump_progress: float = 0.0
@@ -26,6 +26,10 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         texture_idle = pygame.image.load("textures\\king_idle.png")
+        self.sound_jump = pygame.mixer.Sound("sounds\\ogg\\sounds_jump.ogg")
+        self.sound_bump = pygame.mixer.Sound("sounds\\ogg\\sounds_bump.ogg")
+        self.sound_fall = pygame.mixer.Sound("sounds\\ogg\\sounds_fall.ogg")
+        self.sound_land = pygame.mixer.Sound("sounds\\ogg\\sounds_land.ogg")
 
         self.image = texture_idle
         self.image = pygame.transform.scale(self.image,(50,50))
@@ -178,9 +182,11 @@ class Player(pygame.sprite.Sprite):
         self.falling = False
         if self.downwards_velocity < 9:
             self.image = pygame.image.load("textures\\king_idle.png")
+            self.sound_land.play()
         else:
             self.image = pygame.image.load("textures\\king_ded.png")
             self.dead = True
+            self.sound_fall.play()
         self.downwards_velocity = 0.0
         if self.orient_left:
             self.image = pygame.transform.flip(self.image, True, False)
@@ -296,6 +302,7 @@ class Player(pygame.sprite.Sprite):
             texture_jump = pygame.transform.flip(texture_jump, True, False)
         self.image = texture_jump
         self.jumping = True
+        self.sound_jump.play()
 
     def fall(self):
         self.downwards_velocity = 0.0
@@ -319,6 +326,7 @@ class Player(pygame.sprite.Sprite):
         self.image = texture_bounce
         if not self.orient_left:
             self.image = pygame.transform.flip(self.image, True, False)
+        self.sound_bump.play()
 
     def texture_fall(self):
         texture_fall = pygame.image.load("textures\\king_fall.png")

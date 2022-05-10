@@ -1,15 +1,10 @@
 import sys
-import time
-import math
 import json
 
 import pygame
 from pygame.locals import *
 
 from map_objects import CollisionObject, TiltObject
-
-DISPLAY_WIDTH = 600
-DISPLAY_HEIGHT = 700
 
 class Map:
     objectList: list = []

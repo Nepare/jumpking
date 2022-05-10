@@ -1,7 +1,4 @@
 import sys
-import time
-import math
-import json
 
 import pygame
 from pygame.locals import *

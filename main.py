@@ -1,7 +1,5 @@
 import sys
 import time
-import math
-import json
 
 import pygame
 from pygame.locals import *
@@ -16,13 +14,10 @@ pygame.init()
 FPS = pygame.time.Clock()
 FPS.tick(60)
 
-BLUE = (0, 0, 255)
-GRAY = (150, 150, 150)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
+music = pygame.mixer.music.load('sounds\\ogg\\menu_music.ogg')
+# pygame.mixer.music.play()
+
 WHITE = (255, 255, 255)
-DARK_GRAY = (200,200,200)
-BLACK = (0, 0, 0)
 
 DISPLAY_WIDTH = 600
 DISPLAY_HEIGHT = 700
@@ -56,16 +51,19 @@ timer: int = 0
 
 # высота прыжка - примерно 200 пикселей
 
-Level1 = Map("Уровень 1")
+Level1 = Map("Начало")
 Level1.import_from_json("1")
 
-Level2 = Map("Уровень 2")
+Level2 = Map("Выступ")
 Level2.import_from_json("2")
 
+Level3 = Map("Ход")
+Level3.import_from_json("3")
 
 Levels = MapController()
 Levels.add_in_order(Level1)
 Levels.add_in_order(Level2)
+Levels.add_in_order(Level3)
 
 P1.update_level(Level1)
 while True:
