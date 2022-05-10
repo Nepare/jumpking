@@ -73,6 +73,8 @@ class Player(pygame.sprite.Sprite):
                         if not self.if_collides_left(self.current_level):
                             if not self.if_collides_with_a_slider_side(self.current_level):
                                 self.rect.move_ip(-2,0)
+                        if self.rect.right <= 0:
+                            self.rect.left = DISPLAY_WIDTH - 1
                         self.walk_animation_progress += 1
                         if self.walk_animation_progress >= 40:
                             self.walk_animation_progress = 0
@@ -88,6 +90,8 @@ class Player(pygame.sprite.Sprite):
                         if not self.if_collides_right(self.current_level):
                             if not self.if_collides_with_a_slider_side(self.current_level):
                                 self.rect.move_ip(2,0)
+                        if self.rect.left >= DISPLAY_WIDTH:
+                            self.rect.right = 1
                         self.walk_animation_progress += 1
                         if self.walk_animation_progress >= 40:
                             self.walk_animation_progress = 0
@@ -109,6 +113,10 @@ class Player(pygame.sprite.Sprite):
             if self.jump_progress > 0.0:
                 self.rect.move_ip(4 * self.horizontal_velocity, -14 * (self.jump_progress))
                 self.jump_progress -= 0.03
+                if self.rect.left >= DISPLAY_WIDTH:
+                    self.rect.right = 1
+                if self.rect.right <= 0:
+                    self.rect.left = DISPLAY_WIDTH - 1
 
             if self.jump_progress <= 0:
                 self.falling = True
@@ -145,6 +153,10 @@ class Player(pygame.sprite.Sprite):
         if self.falling:
             self.rect.move_ip(4 * self.horizontal_velocity, 5 + self.downwards_velocity)
             self.downwards_velocity += 0.2
+            if self.rect.left >= DISPLAY_WIDTH:
+                self.rect.right = 1
+            if self.rect.right <= 0:
+                self.rect.left = DISPLAY_WIDTH - 1
 
             if self.if_collides_left(self.current_level) and self.horizontal_velocity != 0:
                 self.turn_right()
