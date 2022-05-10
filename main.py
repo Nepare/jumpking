@@ -7,7 +7,8 @@ import pygame
 from pygame.locals import *
 
 from player import  Player
-from map import Map, MapController, CollisionObject, TiltObject
+from map import Map, MapController
+from map_objects import CollisionObject, TiltObject
 from jumpbar import JumpBar
 
 pygame.init()
