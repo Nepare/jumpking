@@ -23,6 +23,7 @@ class Player(pygame.sprite.Sprite):
     idle_animation_progress: int = 0
     current_level: Map
     Levels: MapController
+    final: bool = 0
 
     def __init__(self):
         super().__init__()
@@ -103,6 +104,9 @@ class Player(pygame.sprite.Sprite):
                     # ----------------------------------------------- NOTHING HAPPENS
                     else:
                         if not self.dead:
+                            if self.final:
+                                self.jump_progress = 0.5
+                                self.jump(jumpbar)
                             self.idle_animation_progress += 1
                             if self.idle_animation_progress >= 1000: # 1000 тиков для полного цикла анимации покоя
                                 self.idle_animation_progress = 0
@@ -148,6 +152,8 @@ class Player(pygame.sprite.Sprite):
 
             if self.rect.bottom <= 0:
                 self.update_level(Levels.level_list[Levels.level_list.index(self.current_level) + 1])
+                if Levels.level_list.index(self.current_level) == 4:
+                    self.final = True
                 self.rect.bottom = DISPLAY_HEIGHT
 
         # ------------------------------------------------------ WHILE FALLING
@@ -190,6 +196,8 @@ class Player(pygame.sprite.Sprite):
 
             if self.rect.bottom >= DISPLAY_HEIGHT:
                 self.update_level(Levels.level_list[Levels.level_list.index(self.current_level) - 1])
+                if Levels.level_list.index(self.current_level) != 4:
+                    self.final = False
                 self.rect.bottom = 0
 
     def land(self):
