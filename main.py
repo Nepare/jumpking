@@ -17,7 +17,7 @@ FPS = pygame.time.Clock()
 FPS.tick(60)
 
 music = pygame.mixer.music.load('sounds\\ogg\\menu_music.ogg')
-# pygame.mixer.music.play()
+pygame.mixer.music.play()
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -28,6 +28,7 @@ DISPLAY_HEIGHT = 700
 DISPLAYSURF = pygame.display.set_mode((DISPLAY_WIDTH,DISPLAY_HEIGHT))
 DISPLAYSURF.fill(WHITE)
 pygame.display.set_caption("Jump King на минималках")
+pygame.display.set_icon(pygame.image.load("textures\\king_in_air.png"))
 
 def gameloop(timer):
     timer += 1

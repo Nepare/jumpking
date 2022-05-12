@@ -4,12 +4,21 @@ from pygame.locals import *
 class Menu(pygame.sprite.Sprite):
     chosen: int = 0
     in_game: bool = False
+    title_float = 0
+    title_moving_up = 1
 
     def __init__(self):
         texture = pygame.image.load("textures\\menu\\menu_continue.png")
         self.rect = texture.get_rect()
         self.rect.bottomleft = (0, 700)
         self.image = texture
+
+    def float_title(self):
+        if self.title_float < 25 and self.title_float > -1:
+            self.title_float += self.title_moving_up / 5
+        else:
+            self.title_moving_up *= -1
+            self.title_float += self.title_moving_up / 5
 
     def update(self):
         if self.chosen == 0:
@@ -39,5 +48,6 @@ class Menu(pygame.sprite.Sprite):
         texture_title = pygame.image.load("textures\\menu\\menu_title.png")
         texture_title = pygame.transform.scale(texture_title, (500, 142))
         title_rect = texture_title.get_rect()
-        title_rect.center = (300, 200)
+        self.float_title()
+        title_rect.center = (300, 200 + self.title_float)
         surface.blit(texture_title, title_rect)
