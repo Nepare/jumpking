@@ -39,7 +39,7 @@ def gameloop(timer):
     P1.draw(DISPLAYSURF)
     P1.current_level.draw(DISPLAYSURF)
     J1.draw(DISPLAYSURF)
-    P1.save()
+    P1.save(Levels)
 
     pygame.display.update()
     return timer
@@ -101,9 +101,9 @@ while True:
                 pygame.quit()
                 sys.exit()
             if menu.chosen == 0:
+                P1.load(Levels)
                 P1.update(J1, Levels)
                 menu.in_game = True
-                P1.load(Levels)
 
 
         menu.update()

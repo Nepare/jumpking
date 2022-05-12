@@ -393,9 +393,9 @@ class Player(pygame.sprite.Sprite):
     def update_level(self, new_level):
         self.current_level = new_level
 
-    def save(self):
+    def save(self, Levels):
         json_dict: dict = {}
-        json_dict["map"] = self.current_level.number
+        json_dict["map"] = Levels.level_list.index(self.current_level)
         json_dict["x"] = self.rect.center[0]
         json_dict["y"] = self.rect.center[1]
         json_dict["hor_vel"] = self.horizontal_velocity
@@ -409,7 +409,7 @@ class Player(pygame.sprite.Sprite):
     def load(self, Levels):
         with open("save_state.json", 'r') as f:
             json_dict = json.loads(f.read())
-            self.update_level(Levels.level_list[int(json_dict["map"]) - 1])
+            self.update_level(Levels.level_list[int(json_dict["map"])])
             self.rect.center = (json_dict["x"], json_dict["y"])
             self.falling = json_dict["falling"]
             self.jumping = json_dict["jumping"]
