@@ -1,3 +1,4 @@
+import json
 import sys
 import time
 
@@ -8,6 +9,7 @@ from player import  Player
 from map import Map, MapController
 from map_objects import CollisionObject, TiltObject
 from jumpbar import JumpBar
+from menu import Menu
 
 pygame.init()
 
@@ -18,6 +20,7 @@ music = pygame.mixer.music.load('sounds\\ogg\\menu_music.ogg')
 # pygame.mixer.music.play()
 
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 
 DISPLAY_WIDTH = 600
 DISPLAY_HEIGHT = 700
@@ -29,17 +32,14 @@ pygame.display.set_caption("Jump King на минималках")
 def gameloop(timer):
     timer += 1
 
-    # START OF GAME LOGIC
-
     P1.update(J1, Levels)
-
-    # END OF GAME LOGIC
 
     DISPLAYSURF.fill(WHITE)
 
     P1.draw(DISPLAYSURF)
     P1.current_level.draw(DISPLAYSURF)
     J1.draw(DISPLAYSURF)
+    P1.save()
 
     pygame.display.update()
     return timer
@@ -75,10 +75,39 @@ Levels.add_in_order(Level4)
 Levels.add_in_order(Level5)
 
 P1.update_level(Level1)
+
+menu = Menu()
+
 while True:
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
-    timer = gameloop(timer)
+    if menu.in_game:
+        timer = gameloop(timer)
+    else:
+        DISPLAYSURF.fill(BLACK)
+
+        if pygame.key.get_pressed()[K_UP]:
+            menu.up()
+            FPS.tick(10)
+        if pygame.key.get_pressed()[K_DOWN]:
+            menu.down()
+            FPS.tick(10)
+        if pygame.key.get_pressed()[K_SPACE]:
+            if menu.chosen == 1:
+                menu.in_game = True
+            if menu.chosen == 2:
+                pygame.quit()
+                sys.exit()
+            if menu.chosen == 0:
+                P1.update(J1, Levels)
+                menu.in_game = True
+                P1.load(Levels)
+
+
+        menu.update()
+        menu.draw(DISPLAYSURF)
+        pygame.display.update()
     FPS.tick(60)
+

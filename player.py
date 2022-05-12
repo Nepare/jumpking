@@ -1,4 +1,5 @@
 import sys
+import json
 
 import pygame
 from pygame.locals import *
@@ -156,6 +157,7 @@ class Player(pygame.sprite.Sprite):
             if self.rect.left >= DISPLAY_WIDTH:
                 self.rect.right = 1
             if self.rect.right <= 0:
+                self.rect.left = DISPLAY_WIDTH - 1
                 self.rect.left = DISPLAY_WIDTH - 1
 
             if self.if_collides_left(self.current_level) and self.horizontal_velocity != 0:
@@ -390,3 +392,26 @@ class Player(pygame.sprite.Sprite):
 
     def update_level(self, new_level):
         self.current_level = new_level
+
+    def save(self):
+        json_dict: dict = {}
+        json_dict["map"] = self.current_level.number
+        json_dict["x"] = self.rect.center[0]
+        json_dict["y"] = self.rect.center[1]
+        json_dict["hor_vel"] = self.horizontal_velocity
+        json_dict["ver_vel"] = self.downwards_velocity
+        json_dict["falling"] = self.falling
+        json_dict["jumping"] = self.jumping
+
+        with open("save_state.json", 'w', encoding="utf-8") as f:
+            json.dump(json_dict, f)
+
+    def load(self, Levels):
+        with open("save_state.json", 'r') as f:
+            json_dict = json.loads(f.read())
+            self.update_level(Levels.level_list[int(json_dict["map"]) - 1])
+            self.rect.center = (json_dict["x"], json_dict["y"])
+            self.falling = json_dict["falling"]
+            self.jumping = json_dict["jumping"]
+            self.horizontal_velocity = json_dict["hor_vel"]
+            self.downwards_velocity = json_dict["ver_vel"]

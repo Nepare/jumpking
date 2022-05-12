@@ -10,6 +10,7 @@ class Map:
     objectList: list = []
     tiltList: list = []
     name: str
+    number: int = 1
 
     def __init__(self, name_in):
         self.name = name_in
@@ -31,6 +32,7 @@ class Map:
     def import_from_json(self, json_file_name):
         with open("levels\\" + json_file_name + ".json", 'r') as f:
             level_dict = json.load(f)
+            self.number == int(json_file_name)
             collision_objects = level_dict["col"]
             tilt_objects = level_dict["tilt"]
             for x in collision_objects:
